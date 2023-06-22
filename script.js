@@ -118,6 +118,17 @@ const calcDisplaySummary = acc => {
     .map(deposit => (deposit * acc.interestRate) / 100)
     .reduce((acc, int) => (int >= 1 ? acc + int : acc), 0)} €`;
 };
+const UpdateUi = account => {
+  if (loggedAccount) {
+    calcDisplayBalance(loggedAccount);
+    calcDisplaySummary(loggedAccount);
+    printMovements(loggedAccount);
+  } else {
+    containerApp.style.opacity = `0`;
+  }
+};
+let movementsNotSorted;
+let movementsSorted;
 const login = e => {
   e.preventDefault();
   // check correct pin and username
@@ -132,21 +143,14 @@ const login = e => {
     }`;
     UpdateUi(loggedAccount);
     containerApp.style.opacity = `1`;
+    movementsNotSorted = [...loggedAccount.movements];
+    movementsSorted = [...loggedAccount.movements].sort();
   }
   // reset input fields
   inputLoginUsername.value = ``;
   inputLoginPin.value = ``;
   inputLoginUsername.blur();
   inputLoginPin.blur();
-};
-const UpdateUi = account => {
-  if (loggedAccount) {
-    calcDisplayBalance(loggedAccount);
-    calcDisplaySummary(loggedAccount);
-    printMovements(loggedAccount);
-  } else {
-    containerApp.style.opacity = `0`;
-  }
 };
 const checkInfo = (username, pin = null) => {
   return accounts.find(
@@ -167,7 +171,7 @@ const transferMoney = e => {
   ) {
     transferToObject.movements.push(transferAmount);
     loggedAccount.movements.push(-transferAmount);
-    UpdateUi();
+    UpdateUi(loggedAccount);
   }
   inputTransferTo.value = inputTransferAmount.value = ``;
   inputTransferTo.blur();
@@ -184,17 +188,45 @@ const closeAccount = e => {
       1
     );
     loggedAccount = null;
-    UpdateUi();
+    UpdateUi(loggedAccount);
   }
   inputCloseUsername.value = ``;
   inputClosePin.value = ``;
   inputCloseUsername.blur();
   inputClosePin.blur();
 };
+const requestLoan = e => {
+  e.preventDefault();
+  const loanAmount = Number(inputLoanAmount.value);
+  if (
+    loggedAccount.movements.some(move => move >= loanAmount * 0.1) &&
+    loanAmount > 0
+  ) {
+    loggedAccount.movements.push(loanAmount);
+    UpdateUi(loggedAccount);
+  }
+  inputLoanAmount.value = ``;
+  inputLoanAmount.blur();
+};
+let sorted = true;
+
+const sortMoves = e => {
+  e.preventDefault();
+  if (sorted) {
+    sorted = false;
+    loggedAccount.movements = movementsSorted;
+  } else {
+    sorted = true;
+    loggedAccount.movements = movementsNotSorted;
+  }
+  UpdateUi(loggedAccount);
+};
 createUseranme(accounts);
 btnLogin.addEventListener(`click`, login);
 btnTransfer.addEventListener(`click`, transferMoney);
 btnClose.addEventListener(`click`, closeAccount);
+btnLoan.addEventListener(`click`, requestLoan);
+btnSort.addEventListener(`click`, sortMoves);
 /////////////////////////////////////////////
 // LECTURES
 /////////////////////////////////////////////
